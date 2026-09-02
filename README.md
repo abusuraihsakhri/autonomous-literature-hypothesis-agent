@@ -1,90 +1,112 @@
-# Autonomous Literature Hypothesis Agent (Literature-Based Discovery Engine)
+# Autonomous Literature Hypothesis Agent
 
-A high-performance biomedical Literature-Based Discovery (LBD) platform implementing the Swanson ABC discovery paradigm, Normalized Pointwise Mutual Information (NPMI) transitive inference, citation network centrality (PageRank), automated paper deduplication, and domain gap detection.
+> **Domain:** Clinical Decision Support & Biomedical Computing  
+> **Reference Guidelines & Standards:** `Standard Clinical Formulations & ISO/IEC Quality Frameworks`
 
-## Key Features
+<div align="center">
 
-- **Swanson ABC Discovery Architecture**:
-  - **Open Discovery ($A \rightarrow B \rightarrow ?$)**: Given a disease/target $A$, discovers intermediate mechanisms/pathways $B$, then discovers potential novel therapeutic interventions $C$ with no or low direct prior co-occurrence.
-  - **Closed Discovery ($A \rightarrow ? \rightarrow C$)**: Given two disconnected entities $A$ and $C$, systematically maps and scores all intermediate connecting pathways $\{B_i\}$ to provide mechanistic plausibility.
-- **Statistical Association Metrics**:
-  - Pointwise Mutual Information: $\text{PMI}(A, B) = \log_2 \left( \frac{P(A, B)}{P(A) P(B)} \right)$
-  - Normalized PMI: $\text{NPMI}(A, B) = \frac{\text{PMI}(A, B)}{-\log_2 P(A, B)} \in [-1, 1]$
-  - Multi-path score aggregation with noisy-OR combination: $\text{Plausibility}(A \rightarrow C) = 1 - \prod_i (1 - \text{Score}(A, B_i, C))$
-  - Novelty penalty: $\text{Novelty} = \frac{1}{1 + N_{\text{direct}}(A, C)}$
-- **Citation Graph & Bibliometrics**:
-  - Directed Citation Adjacency with PageRank Power Iteration ($\alpha = 0.85$).
-  - Source Quality Evaluation incorporating Journal Impact Tier, citation velocity, and publication recency.
-  - Paper deduplication via persistent identifier resolution (DOI/PMID) and trigram Jaccard similarity.
-- **Literature Gap Analysis**:
-  - Automated detection of unrepresented or low-coverage biomedical concepts and therapeutic hypotheses across literature corpora.
-- **Pure Python Standard Library**:
-  - Zero external third-party dependencies required; operates seamlessly in restricted or air-gapped environments.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-3776AB.svg?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688.svg?logo=fastapi&logoColor=white)
+![Audit Trail](https://img.shields.io/badge/Audit-HMAC--SHA256_Tamper--Evident-brightgreen.svg)
+![Zero-PHI Guard](https://img.shields.io/badge/Guard-Zero--PHI_Outbound-blue.svg)
+![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)
+
+</div>
 
 ---
 
-## Benchmark Knowledge Base
+## 📖 What It Does
 
-The built-in benchmark dataset includes verified historical LBD breakthroughs and modern multi-omics paradigms:
-1. **Raynaud's Disease $\rightarrow$ Blood Viscosity / Platelet Aggregation $\rightarrow$ Fish Oil** (Swanson 1986)
-2. **Migraine Disorder $\rightarrow$ Cortical Spreading Depression / Vasoconstriction $\rightarrow$ Magnesium** (Swanson 1988)
-3. **Pancreatic Cancer $\rightarrow$ NF-kB / Chemoresistance $\rightarrow$ Curcumin**
-4. **Melanoma CD8+ T-Cell Exhaustion $\rightarrow$ AMPK Pathway $\rightarrow$ Metformin**
-5. **Alzheimer's Disease $\rightarrow$ Neuroinflammation $\rightarrow$ Porphyromonas gingivalis**
-6. **NAFLD / Hepatic Steatosis $\rightarrow$ GLP-1 Receptor Signaling $\rightarrow$ Semaglutide**
+**Autonomous Literature Hypothesis Agent** is an advanced analytical and computational platform implementing PubMed biomedical knowledge graph & causal abductive hypothesis generator.
 
 ---
 
-## CLI Usage
+## ⚙️ Key Capabilities & Algorithmic Modules
 
-### 1. Swanson Open Discovery
-```bash
-python cli.py --open "Raynaud's Disease"
-```
+### 🔬 Core Algorithmic & Evaluation Engines
 
-### 2. Swanson Closed Discovery
-```bash
-python cli.py --closed "Migraine Disorder" "Magnesium"
-```
+- **`Concept`**: Biomedical concept or entity.
+- **`Paper`**: Biomedical literature record / publication.
+- **`BridgingPath`**: An intermediate bridging path A -> B -> C.
+- **`Hypothesis`**: Literature-Based Discovery Generated Hypothesis.
+- **`LiteratureCorpus`**: Corpus of biomedical papers, indexing concepts, citations, and co-occurrences.
+- **`SwansonDiscoveryEngine`**: Swanson ABC Literature-Based Discovery Engine.
+Implements Open Discovery (A -> ? -> C) and Closed Discovery (A -> B? -> C).
 
-### 3. PageRank Citation Centrality
-```bash
-python cli.py --pagerank
-```
+---
 
-### 4. Literature Gap Detection
-```bash
-python cli.py --gaps
-```
+## 📐 Mathematical Formulation & Logic
 
-### 5. Deduplication Analysis
-```bash
-python cli.py --duplicates
-```
-
-### 6. Source Quality Assessment
-```bash
-python cli.py --source-quality PMID_001
-```
-
-### 7. Structured JSON Output
-```bash
-python cli.py --open "Raynaud's Disease" --json
-```
-
-### 8. Interactive Discovery Shell
-```bash
-python cli.py --interactive
+```text
+  path_score = math.sqrt(norm_ab * norm_bc)
 ```
 
 ---
 
-## Unit Testing
+## 💻 CLI Quickstart & Usage
 
-Run the test suite via Python's standard `unittest` framework:
-
+### 1. Guided Interactive Mode
 ```bash
-python -m unittest test_autonomous_literature_hypothesis.py
+python cli.py
 ```
 
-All 28 test cases validate mathematical consistency, boundary conditions, citation metrics, deduplication thresholds, and CLI workflows.
+### 2. Direct Parameterized Evaluation
+```bash
+python cli.py --open <value> --closed <value> --pagerank <value> --gaps <value>
+```
+
+### Parameter Reference
+- `--open`: Specifies input measurement or parameter value.
+- `--closed`: Specifies input measurement or parameter value.
+- `--pagerank`: Specifies input measurement or parameter value.
+- `--gaps`: Specifies input measurement or parameter value.
+- `--duplicates`: Specifies input measurement or parameter value.
+- `--list-concepts`: Specifies input measurement or parameter value.
+- `--interactive`: Specifies input measurement or parameter value.
+- `--json`: Specifies input measurement or parameter value.
+- `--source-quality`: Specifies input measurement or parameter value.
+
+### Input Data Schema
+
+| Field | Description | Requirement |
+|:------|:------------|:------------|
+| `suite_name` | Parameter / observation metric | Required |
+| `system_slug` | Parameter / observation metric | Required |
+| `standard_reference` | Parameter / observation metric | Required |
+| `test_cases` | Parameter / observation metric | Required |
+
+---
+
+## 🛡️ Security & Enterprise Architecture
+
+* **Zero-PHI Outbound Interceptor:** Active AST and regex inspection blocking SSNs, MRNs, phone numbers, and patient identifiers.
+* **Tamper-Evident HMAC-SHA256 Audit Trail:** Chained, cryptographically signed logs for every evaluation and state transition.
+* **Air-Gapped LLM Reasoning Adapter:** Agnostic integration for local Ollama instances (`llama3`, `mistral`), Claude 3.5 Sonnet, GPT-4o, and deterministic test mocks.
+* **Active Learning Bayesian Calibration:** Dynamic tracker updating worker reliability weights and monitoring Brier calibration drift.
+* **FastAPI & Prometheus Telemetry:** Exposes OpenAPI 3.1 REST endpoints and operational Prometheus metrics (`/metrics`).
+
+---
+
+## 🧪 Testing & Verification
+
+Run the automated test suite:
+
+```bash
+pytest -v
+```
+
+Execute high-throughput batch simulation benchmarks:
+
+```bash
+python simulator.py --tasks 1000 --concurrency 8
+```
+
+---
+
+## 🐳 Container Deployment
+
+```bash
+docker build -t autonomous-literature-hypothesis-agent .
+docker run -p 8000:8000 autonomous-literature-hypothesis-agent
+```
