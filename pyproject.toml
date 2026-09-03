@@ -20,7 +20,7 @@ requires-python = ">=3.9"
 dependencies = []
 
 [project.scripts]
-autonomous-literature-hypothesis-engine = "bio_hypothesis.cli:main"
+autonomous-literature-hypothesis-engine = "cli:main"
 
 [project.urls]
 Homepage = "https://github.com/abusuraihsakhri/autonomous-literature-hypothesis-engine"

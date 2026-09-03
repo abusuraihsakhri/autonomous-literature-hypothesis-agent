@@ -14,6 +14,7 @@ Usage examples:
 """
 
 import argparse
+import csv
 import json
 import sys
 from typing import List, Optional
@@ -159,13 +160,171 @@ Available Commands:
             print(f"Unknown command '{cmd}'. Type 'help' for instructions.")
 
 
+def run_batch(input_path: str, output_path: str, corpus: LiteratureCorpus, engine: SwansonDiscoveryEngine) -> int:
+    """
+    Process batch CSV containing biomedical queries (open / closed discovery).
+    Writes comprehensive hypothesis metrics and intermediate bridging pathways to output CSV.
+    """
+    try:
+        with open(input_path, mode="r", encoding="utf-8-sig") as infile:
+            reader = csv.DictReader(infile)
+            fieldnames = [
+                "query_id",
+                "query_type",
+                "source_concept",
+                "target_concept",
+                "clinical_domain",
+                "status",
+                "hypotheses_count",
+                "top_target_concept",
+                "top_confidence",
+                "top_plausibility",
+                "top_novelty",
+                "top_bridges",
+                "top_mechanistic_rationale",
+                "top_recommendation",
+            ]
+            rows_out = []
+            for row in reader:
+                qid = row.get("query_id", "").strip()
+                qtype = row.get("query_type", "open").strip().lower()
+                source_raw = row.get("source_concept", "").strip()
+                target_raw = row.get("target_concept", "").strip()
+                domain = row.get("clinical_domain", "").strip()
+                try:
+                    min_npmi = float(row.get("min_npmi", 0.0) or 0.0)
+                except ValueError:
+                    min_npmi = 0.0
+
+                resolved_source = corpus.resolve_concept(source_raw) if source_raw else None
+
+                if not resolved_source:
+                    rows_out.append({
+                        "query_id": qid,
+                        "query_type": qtype,
+                        "source_concept": source_raw,
+                        "target_concept": target_raw,
+                        "clinical_domain": domain,
+                        "status": f"ERROR: Unresolved source concept '{source_raw}'",
+                        "hypotheses_count": 0,
+                        "top_target_concept": "",
+                        "top_confidence": 0.0,
+                        "top_plausibility": 0.0,
+                        "top_novelty": 0.0,
+                        "top_bridges": "",
+                        "top_mechanistic_rationale": "",
+                        "top_recommendation": "",
+                    })
+                    continue
+
+                if qtype == "closed":
+                    resolved_target = corpus.resolve_concept(target_raw) if target_raw else None
+                    if not resolved_target:
+                        rows_out.append({
+                            "query_id": qid,
+                            "query_type": qtype,
+                            "source_concept": source_raw,
+                            "target_concept": target_raw,
+                            "clinical_domain": domain,
+                            "status": f"ERROR: Unresolved target concept '{target_raw}'",
+                            "hypotheses_count": 0,
+                            "top_target_concept": "",
+                            "top_confidence": 0.0,
+                            "top_plausibility": 0.0,
+                            "top_novelty": 0.0,
+                            "top_bridges": "",
+                            "top_mechanistic_rationale": "",
+                            "top_recommendation": "",
+                        })
+                        continue
+
+                    hypo = engine.closed_discovery(resolved_source.concept_id, resolved_target.concept_id, min_npmi=min_npmi)
+                    top_bridges = "; ".join([f"{b.concept_b_name} [{b.concept_b_category}] (score={b.path_score})" for b in hypo.bridging_paths[:3]])
+                    rows_out.append({
+                        "query_id": qid,
+                        "query_type": qtype,
+                        "source_concept": resolved_source.name,
+                        "target_concept": resolved_target.name,
+                        "clinical_domain": domain,
+                        "status": "SUCCESS",
+                        "hypotheses_count": 1 if hypo.bridging_paths else 0,
+                        "top_target_concept": hypo.target_concept_name,
+                        "top_confidence": hypo.overall_confidence,
+                        "top_plausibility": hypo.plausibility_score,
+                        "top_novelty": hypo.novelty_score,
+                        "top_bridges": top_bridges,
+                        "top_mechanistic_rationale": hypo.mechanistic_rationale,
+                        "top_recommendation": hypo.recommendation,
+                    })
+                else:
+                    # Open discovery
+                    hypos = engine.open_discovery(resolved_source.concept_id, min_npmi=min_npmi)
+                    if hypos:
+                        top = hypos[0]
+                        top_bridges = "; ".join([f"{b.concept_b_name} [{b.concept_b_category}] (score={b.path_score})" for b in top.bridging_paths[:3]])
+                        rows_out.append({
+                            "query_id": qid,
+                            "query_type": qtype,
+                            "source_concept": resolved_source.name,
+                            "target_concept": top.target_concept_name,
+                            "clinical_domain": domain,
+                            "status": "SUCCESS",
+                            "hypotheses_count": len(hypos),
+                            "top_target_concept": top.target_concept_name,
+                            "top_confidence": top.overall_confidence,
+                            "top_plausibility": top.plausibility_score,
+                            "top_novelty": top.novelty_score,
+                            "top_bridges": top_bridges,
+                            "top_mechanistic_rationale": top.mechanistic_rationale,
+                            "top_recommendation": top.recommendation,
+                        })
+                    else:
+                        rows_out.append({
+                            "query_id": qid,
+                            "query_type": qtype,
+                            "source_concept": resolved_source.name,
+                            "target_concept": "",
+                            "clinical_domain": domain,
+                            "status": "NO_HYPOTHESES_FOUND",
+                            "hypotheses_count": 0,
+                            "top_target_concept": "",
+                            "top_confidence": 0.0,
+                            "top_plausibility": 0.0,
+                            "top_novelty": 0.0,
+                            "top_bridges": "",
+                            "top_mechanistic_rationale": "",
+                            "top_recommendation": "",
+                        })
+
+        with open(output_path, mode="w", newline="", encoding="utf-8") as outfile:
+            writer = csv.DictWriter(outfile, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(rows_out)
+
+        print(f"Batch processing complete. Processed {len(rows_out)} queries. Results written to: {output_path}")
+        return 0
+    except Exception as e:
+        print(f"Error during batch execution: {e}", file=sys.stderr)
+        return 1
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(
         prog="autonomous-literature-hypothesis-agent",
         description="Autonomous Literature-Based Hypothesis Discovery Engine (Swanson ABC Model & Citation Analysis)",
     )
 
-    parser.add_argument("--open", "-o", dest="open_concept", help="Run Swanson open discovery from source concept A")
+    # Subparsers for commands including batch
+    subparsers = parser.add_subparsers(dest="subcommand", help="Available subcommands")
+
+    batch_parser = subparsers.add_parser("batch", help="Batch process biomedical queries from a CSV file")
+    batch_parser.add_argument("--input", "-i", dest="input_file", required=True, help="Path to input CSV file")
+    batch_parser.add_argument("--output", "-o", dest="output_file", required=True, help="Path to output CSV results file")
+
+    parser.add_argument("--batch", action="store_true", help="Run in batch mode (used with --input and --output)")
+    parser.add_argument("--input", "-i", dest="input_file", help="Input CSV path for batch mode")
+    parser.add_argument("--output", "-o", dest="output_file", help="Output CSV path for batch mode")
+    parser.add_argument("--open", dest="open_concept", help="Run Swanson open discovery from source concept A")
     parser.add_argument("--closed", "-c", dest="closed_concepts", nargs=2, metavar=("CONCEPT_A", "CONCEPT_C"),
                         help="Run Swanson closed discovery between concept A and concept C")
     parser.add_argument("--list-concepts", action="store_true", help="List all indexed concepts in the benchmark knowledge base")
@@ -173,12 +332,18 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--gaps", action="store_true", help="Detect literature gaps across biomedical topics")
     parser.add_argument("--duplicates", action="store_true", help="Scan indexed corpus for duplicate papers")
     parser.add_argument("--source-quality", dest="quality_paper_id", help="Evaluate source quality of a given paper ID")
-    parser.add_argument("--interactive", "-i", action="store_true", help="Launch interactive discovery shell")
+    parser.add_argument("--interactive", action="store_true", help="Launch interactive discovery shell")
     parser.add_argument("--json", action="store_true", help="Output results in JSON format")
 
     args = parser.parse_args(argv)
     corpus = build_curated_benchmark_corpus()
     engine = SwansonDiscoveryEngine(corpus)
+
+    if args.subcommand == "batch" or args.batch or (args.input_file and args.output_file):
+        if not args.input_file or not args.output_file:
+            print("Error: Batch mode requires both --input and --output file paths.", file=sys.stderr)
+            return 1
+        return run_batch(args.input_file, args.output_file, corpus, engine)
 
     if args.interactive:
         run_interactive(corpus)

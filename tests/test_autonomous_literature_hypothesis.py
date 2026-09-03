@@ -286,6 +286,59 @@ class TestCLIInterface(unittest.TestCase):
             ret = cli.main(["--open", "NonExistentConceptABC123"])
             self.assertEqual(ret, 1)
 
+    def test_cli_batch_subcommand(self):
+        import tempfile
+        import os
+        import csv
+        with tempfile.TemporaryDirectory() as tmpdir:
+            in_csv = os.path.join(tmpdir, "input.csv")
+            out_csv = os.path.join(tmpdir, "output.csv")
+            with open(in_csv, "w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerow(["query_id", "query_type", "source_concept", "target_concept", "clinical_domain", "min_npmi", "notes"])
+                writer.writerow(["Q1", "open", "Raynaud's Disease", "", "Vascular", "0.0", "Test open"])
+                writer.writerow(["Q2", "closed", "Migraine Disorder", "Magnesium", "Neurology", "0.0", "Test closed"])
+                writer.writerow(["Q3", "open", "NonExistentConceptXYZ", "", "General", "0.0", "Error case"])
+
+            with patch('sys.stdout', new=StringIO()) as fake_out:
+                ret = cli.main(["batch", "-i", in_csv, "-o", out_csv])
+                self.assertEqual(ret, 0)
+                self.assertIn("Batch processing complete", fake_out.getvalue())
+
+            self.assertTrue(os.path.exists(out_csv))
+            with open(out_csv, "r", encoding="utf-8") as f:
+                reader = list(csv.DictReader(f))
+                self.assertEqual(len(reader), 3)
+                self.assertEqual(reader[0]["status"], "SUCCESS")
+                self.assertEqual(reader[0]["top_target_concept"], "Fish Oil")
+                self.assertEqual(reader[1]["status"], "SUCCESS")
+                self.assertEqual(reader[1]["top_target_concept"], "Magnesium")
+                self.assertTrue(reader[2]["status"].startswith("ERROR"))
+
+    def test_cli_batch_flags(self):
+        import tempfile
+        import os
+        import csv
+        with tempfile.TemporaryDirectory() as tmpdir:
+            in_csv = os.path.join(tmpdir, "input.csv")
+            out_csv = os.path.join(tmpdir, "output.csv")
+            with open(in_csv, "w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerow(["query_id", "query_type", "source_concept", "target_concept", "clinical_domain", "min_npmi", "notes"])
+                writer.writerow(["Q1", "closed", "Pancreatic Ductal Adenocarcinoma", "Curcumin", "Oncology", "0.0", "Test"])
+
+            with patch('sys.stdout', new=StringIO()) as fake_out:
+                ret = cli.main(["--batch", "--input", in_csv, "--output", out_csv])
+                self.assertEqual(ret, 0)
+                self.assertIn("Batch processing complete", fake_out.getvalue())
+
+            self.assertTrue(os.path.exists(out_csv))
+
+    def test_cli_batch_missing_args(self):
+        with patch('sys.stderr', new=StringIO()) as fake_err:
+            ret = cli.main(["--batch"])
+            self.assertEqual(ret, 1)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,9 @@
+query_id,query_type,source_concept,target_concept,clinical_domain,min_npmi,notes
+Q001,open,Raynaud's Disease,,Cardiovascular / Vascular Rheology,0.0,Classic Swanson 1986 discovery: connects Raynaud vasospasm to dietary fish oil via blood viscosity
+Q002,closed,Migraine Disorder,Magnesium,Neurology / Neurovascular,0.0,Classic Swanson 1988 discovery: cortical spreading depression and cerebral vasoconstriction
+Q003,closed,Pancreatic Ductal Adenocarcinoma,Curcumin,Oncology / Chemoresistance,0.0,NF-kB-mediated gemcitabine resistance reversal via diferuloylmethane
+Q004,open,Malignant Melanoma,,Immuno-oncology / Metabolic Reprogramming,0.0,Targeting CD8+ T-cell exhaustion via metabolic activation (AMPK pathway / Metformin)
+Q005,closed,Alzheimer's Disease,Porphyromonas gingivalis,Neurodegeneration / Microbial Pathogenesis,0.0,Periodontal pathogen gingipains driving chronic neuroinflammation and Abeta plaque burden
+Q006,open,Non-Alcoholic Fatty Liver Disease,,Hepatology / Incretin Biology,0.0,GLP-1 receptor signaling modulation of hepatic steatosis by semaglutide
+Q007,closed,Raynaud's Disease,Fish Oil,Vascular Medicine / Hemorheology,0.0,Closed path verification of eicosapentaenoic acid on platelet aggregation and blood viscosity
+Q008,open,Migraine Disorder,,Neurological Disorders / Ion Channelopathies,0.0,Open exploration of neuroprotective ion and vascular interventions in migraine aura
